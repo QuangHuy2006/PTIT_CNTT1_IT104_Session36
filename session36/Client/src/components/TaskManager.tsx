@@ -2,18 +2,22 @@ import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { getInputValue, addTask } from "../redux/slice/taskManager.slice";
 import axios from "axios";
-import { changeCompletion } from "../redux/slice/tackManagerArray.slice";
+import {
+  changeCompletion,
+  changeName,
+  deleteTask,
+} from "../redux/slice/tackManagerArray.slice";
 
 export default function TaskManager() {
   const value = useSelector((state) => state.task);
   const dispatch = useDispatch();
   const [tasks, setTasks] = useState([]);
   let [reload, setReload] = useState(0);
-    useEffect(() => {
-      axios
-        .get("http://localhost:3000/tasks")
-        .then((res) => setTasks(res.data));
-    }, [reload]);
+  const [isFixed, setIsFixed] = useState(false);
+  const [index, setIndex] = useState(0);
+  useEffect(() => {
+    axios.get("http://localhost:3000/tasks").then((res) => setTasks(res.data));
+  }, [reload]);
   const filterByPriority = (e: React.ChangeEvent<HTMLSelectElement>) => {
     if (e.target.value === "") {
       axios
@@ -40,7 +44,7 @@ export default function TaskManager() {
     } else {
       setTasks([...tasks.filter((task) => task.name.includes(e.target.value))]);
     }
-  }
+  };
   return (
     <div className="task-manager">
       <h2>📑 Task Manager</h2>
@@ -67,20 +71,36 @@ export default function TaskManager() {
           <option value="LOW">Thấp</option>
         </select>
         <button
+          className="versatileBtn"
           onClick={() => {
-            dispatch(
-              addTask({
-                id: tasks[tasks.length - 1].id + 1,
-                name: value.name,
-                priority: value.priority,
-                completion: false,
-              })
-            );
-            dispatch(getInputValue({ field: "name", value: "" }));
-            setReload(reload += 1);
+            if (
+              (document.querySelector(".versatileBtn") as HTMLButtonElement)
+                .textContent === "Thêm"
+            ) {
+              dispatch(
+                addTask({
+                  name: value.name,
+                  priority: value.priority,
+                  completion: false,
+                })
+              );
+              dispatch(getInputValue({ field: "name", value: "" }));
+              setReload((reload += 1));
+            } else {
+              dispatch(
+                changeName({
+                  id: index,
+                  name: value.name,
+                  priority: value.priority,
+                })
+              );
+              setIsFixed(false);
+              dispatch(getInputValue({ field: "name", value: "" }));
+              setReload((reload += 1));
+            }
           }}
         >
-          THÊM
+          {isFixed === false ? "Thêm" : "Cập nhật"}
         </button>
       </div>
 
@@ -96,7 +116,7 @@ export default function TaskManager() {
           <option value="MEDIUM">Trung bình</option>
           <option value="LOW">Thấp</option>
         </select>
-        <input type="text" placeholder="Tìm kiếm" onChange={filterByName}/>
+        <input type="text" placeholder="Tìm kiếm" onChange={filterByName} />
       </div>
 
       <ul className="task-list">
@@ -108,10 +128,10 @@ export default function TaskManager() {
                 onChange={() => {
                   if (task.completion === false) {
                     dispatch(changeCompletion({ id: task.id, value: true }));
-                    setReload(reload += 1);
+                    setReload((reload += 1));
                   } else {
                     dispatch(changeCompletion({ id: task.id, value: false }));
-                    setReload(reload += 1);
+                    setReload((reload += 1));
                   }
                 }}
               />
@@ -123,8 +143,25 @@ export default function TaskManager() {
               </span>
             </div>
             <div>
-              <button className="delete-btn">🗑</button>
-              <button className="edit-btn">✏️</button>
+              <button
+                className="delete-btn"
+                onClick={() => {
+                  dispatch(deleteTask({ id: task.id }));
+                  setReload((reload += 1));
+                }}
+              >
+                🗑
+              </button>
+              <button
+                className="edit-btn"
+                onClick={() => {
+                  dispatch(getInputValue({ field: "name", value: task.name }));
+                  setIsFixed(true);
+                  setIndex(task.id);
+                }}
+              >
+                ✏️
+              </button>
             </div>
           </li>
         ))}
