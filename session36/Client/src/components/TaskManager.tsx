@@ -33,7 +33,7 @@ export default function TaskManager() {
         .get("http://localhost:3000/tasks")
         .then((res) => setTasks(res.data));
     } else {
-      setTasks([...tasks.filter((task) => task.completion == e.target.value)]);
+      setTasks([...tasks.filter((task) => task.completion.toString() === e.target.value)]);
     }
   };
   const filterByName = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -125,6 +125,7 @@ export default function TaskManager() {
             <div style={{ display: "flex", gap: "5px" }}>
               <input
                 type="checkbox"
+                checked={task.completion}
                 onChange={() => {
                   if (task.completion === false) {
                     dispatch(changeCompletion({ id: task.id, value: true }));
